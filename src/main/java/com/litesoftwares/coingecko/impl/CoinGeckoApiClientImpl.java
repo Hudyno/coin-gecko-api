@@ -15,10 +15,14 @@ import com.litesoftwares.coingecko.domain.Search.Search;
 import com.litesoftwares.coingecko.domain.Search.Trending;
 import com.litesoftwares.coingecko.domain.Status.StatusUpdates;
 import com.litesoftwares.coingecko.CoinGeckoApiClient;
+import com.litesoftwares.coingecko.exception.CoinGeckoApiException;
+import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+@Log4j2
 public class CoinGeckoApiClientImpl implements CoinGeckoApiClient {
     static final Long DEFAULT_CONNECTION_TIMEOUT = 10L;
     static final Long DEFAULT_READ_TIMEOUT = 10L;
@@ -107,6 +111,7 @@ public class CoinGeckoApiClientImpl implements CoinGeckoApiClient {
 
     @Override
     public CoinFullData getCoinById(String id, boolean localization, boolean tickers, boolean marketData, boolean communityData, boolean developerData, boolean sparkline) {
+        log.info("getCoinById {}", id);
         return coinGeckoApi.executeSync(coinGeckoApiService.getCoinById(id,localization,tickers,marketData,communityData,developerData,sparkline));
     }
 
@@ -277,5 +282,20 @@ public class CoinGeckoApiClientImpl implements CoinGeckoApiClient {
     @Override
     public void shutdown() {
         coinGeckoApi.shutdown();
+    }
+
+    public List<CoinFullData> getCoinById(List<String> idList) {
+        return idList.stream()
+                .map(id -> {
+                    try {
+                        return getCoinById(id);
+
+                    } catch (CoinGeckoApiException e) {
+                        log.error(e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 }
