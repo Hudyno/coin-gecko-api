@@ -1,7 +1,10 @@
 package com.litesoftwares.coingecko;
 
+import com.litesoftwares.coingecko.constant.TokenType;
+import com.litesoftwares.coingecko.domain.ApiToken;
 import com.litesoftwares.coingecko.exception.CoinGeckoApiException;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -12,20 +15,33 @@ import java.lang.annotation.Annotation;
 import java.util.concurrent.TimeUnit;
 
 public class CoinGeckoApi {
-    private final String API_BASE_URL = "https://api.coingecko.com/api/v3/";
+    private static final String API_BASE_URL_PUBLIC = "https://api.coingecko.com/api/v3/";
+    private static final String API_BASE_URL_PRO = "https://pro-api.coingecko.com/api/v3/";
 
     private OkHttpClient okHttpClient = null;
     private Retrofit retrofit = null;
 
-    public <S> S createService(Class<S> serviceClass, Long connectionTimeoutSeconds, Long readTimeoutSeconds, Long writeTimeoutSeconds){
-        okHttpClient = new OkHttpClient.Builder()
+    public <S> S createService(Class<S> serviceClass, Long connectionTimeoutSeconds, Long readTimeoutSeconds, Long writeTimeoutSeconds, ApiToken apiToken){
+        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
                 .connectTimeout(connectionTimeoutSeconds, TimeUnit.SECONDS)
                 .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
-                .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS)
-                .build();
+                .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS);
+
+        if (apiToken != null) {
+            httpClientBuilder.addInterceptor(chain -> {
+                Request original = chain.request();
+                Request request = original.newBuilder()
+                        .header(apiToken.getType().getHeaderName(), apiToken.getValue())
+                        .method(original.method(), original.body())
+                        .build();
+
+                return chain.proceed(request);
+            });
+        }
+        okHttpClient = httpClientBuilder.build();
 
         retrofit = new Retrofit.Builder()
-                .baseUrl(API_BASE_URL)
+                .baseUrl(apiToken != null && TokenType.PRO.equals(apiToken.getType()) ? API_BASE_URL_PRO : API_BASE_URL_PUBLIC)
                 .client(okHttpClient)
                 .addConverterFactory(JacksonConverterFactory.create())
                 .build();

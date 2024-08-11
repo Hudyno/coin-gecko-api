@@ -31,13 +31,22 @@ public class CoinGeckoApiClientImpl implements CoinGeckoApiClient {
         this(DEFAULT_CONNECTION_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
     }
 
-    public CoinGeckoApiClientImpl(Long connectionTimeoutSeconds, Long readTimeoutSeconds, Long writeTimeoutSeconds){
+    public CoinGeckoApiClientImpl(ApiToken apiToken) {
+        this(DEFAULT_CONNECTION_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT, apiToken);
+    }
+
+    public CoinGeckoApiClientImpl(Long connectionTimeoutSeconds, Long readTimeoutSeconds, Long writeTimeoutSeconds) {
+        this(connectionTimeoutSeconds, readTimeoutSeconds, writeTimeoutSeconds, null);
+    }
+
+    public CoinGeckoApiClientImpl(Long connectionTimeoutSeconds, Long readTimeoutSeconds, Long writeTimeoutSeconds, ApiToken apiToken){
         this.coinGeckoApi = new CoinGeckoApi();
         this.coinGeckoApiService = coinGeckoApi.createService(
                 CoinGeckoApiService.class,
                 connectionTimeoutSeconds,
                 readTimeoutSeconds,
-                writeTimeoutSeconds
+                writeTimeoutSeconds,
+                apiToken
         );
     }
 
